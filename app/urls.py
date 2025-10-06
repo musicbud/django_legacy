@@ -86,6 +86,39 @@ from .views.get_buds_by_id import (
 from .views.search_users import SearchUsers
 from .views.set_my_profile import SetMyProfile
 
+from .views.content_views import (
+    GetTracks,
+    GetArtists,
+    GetAlbums,
+    GetPlaylists,
+    GetGenres,
+)
+
+from .views.search_views import (
+    SearchView,
+    SearchSuggestionsView,
+    SearchRecentView,
+    SearchTrendingView,
+)
+
+from .views.library_views import (
+    GetLibrary,
+    GetLibraryPlaylists,
+    GetLibraryLiked,
+    GetLibraryDownloads,
+    GetLibraryRecent,
+)
+
+from .views.event_views import (
+    GetEvents,
+    GetEventById,
+)
+
+from .views.analytics_views import (
+    GetAnalytics,
+    GetAnalyticsStats,
+)
+
 
 from .seeders.spotify.create_user_seed import create_user_seed
 from .views.merge_similars import merge_similars
@@ -164,6 +197,34 @@ urlpatterns = [
     path('merge-similars', merge_similars, name='merge_similars'),
     path('login/', AuthLogin.as_view(), name='api_login'),
     path('token/refresh/', RefreshTokenView.as_view(), name='token_refresh'),
+
+    # Content endpoints
+    path('content/tracks', GetTracks.as_view(), name='get_tracks'),
+    path('content/artists', GetArtists.as_view(), name='get_artists'),
+    path('content/albums', GetAlbums.as_view(), name='get_albums'),
+    path('content/playlists', GetPlaylists.as_view(), name='get_playlists'),
+    path('content/genres', GetGenres.as_view(), name='get_genres'),
+
+    # Search endpoints
+    path('search', SearchView.as_view(), name='search'),
+    path('search/suggestions', SearchSuggestionsView.as_view(), name='search_suggestions'),
+    path('search/recent', SearchRecentView.as_view(), name='search_recent'),
+    path('search/trending', SearchTrendingView.as_view(), name='search_trending'),
+
+    # Library endpoints
+    path('library', GetLibrary.as_view(), name='get_library'),
+    path('library/playlists', GetLibraryPlaylists.as_view(), name='get_library_playlists'),
+    path('library/liked', GetLibraryLiked.as_view(), name='get_library_liked'),
+    path('library/downloads', GetLibraryDownloads.as_view(), name='get_library_downloads'),
+    path('library/recent', GetLibraryRecent.as_view(), name='get_library_recent'),
+
+    # Event endpoints
+    path('events', GetEvents.as_view(), name='get_events'),
+    path('events/<int:event_id>', GetEventById.as_view(), name='get_event_by_id'),
+
+    # Analytics endpoints
+    path('analytics', GetAnalytics.as_view(), name='get_analytics'),
+    path('analytics/stats', GetAnalyticsStats.as_view(), name='get_analytics_stats'),
 ]
 # Add error handling views
 handler404 = NotFoundView.as_view()

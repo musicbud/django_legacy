@@ -25,19 +25,31 @@ class SetMyProfile(APIView):
     
     def post(self, request):
         form = SetMyProfileForm(request.POST, request.FILES)
-        
+
         if form.is_valid():
             try:
                 user = request.user
+                first_name = form.cleaned_data.get('first_name')
+                last_name = form.cleaned_data.get('last_name')
                 bio = form.cleaned_data.get('bio')
                 display_name = form.cleaned_data.get('display_name')
+                location = form.cleaned_data.get('location')
                 photo = form.cleaned_data.get('photo')
+
+                if first_name is not None:
+                    user.first_name = first_name
+
+                if last_name is not None:
+                    user.last_name = last_name
 
                 if bio is not None:
                     user.bio = bio
 
                 if display_name is not None:
                     user.display_name = display_name
+
+                if location is not None:
+                    user.location = location
 
                 if photo:
                     # Handle photo upload
