@@ -6,18 +6,12 @@ from chat.views import user_list, channel_list  # Import the view function
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Web UI routes (for Django templates)
+    path('chat/', include('chat.urls')),
     path('login/', AuthLogin.as_view(), name='login'),
     path('register/', register_view, name='register'),
     path('', home, name='home'),
+    path('', include('app.urls')),
+    path('v1/', include('app.urls')),  # Add v1 API prefix
     path('users/', user_list, name='user_list'),
     path('channels/', channel_list, name='channel_list'),
-    
-    # Legacy routes (without v1 prefix for backwards compatibility)
-    path('', include('app.urls')),
-    path('chat/', include('chat.urls')),
-    
-    # API v1 routes (recommended for Flutter app)
-    path('v1/', include('app.urls')),
-    path('v1/chat/', include('chat.urls')),
 ]

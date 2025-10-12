@@ -147,9 +147,9 @@ class RefreshTokenView(APIView):
         content_type = request.content_type.lower()
 
         if content_type == 'application/json':
-            refresh_token = request.data.get('refresh_token')
+            refresh_token = request.data.get('refresh_token') or request.data.get('refresh')
         elif content_type == 'application/x-www-form-urlencoded':
-            refresh_token = request.POST.get('refresh_token')
+            refresh_token = request.POST.get('refresh_token') or request.POST.get('refresh')
         else:
             return Response({
                 'success': False,

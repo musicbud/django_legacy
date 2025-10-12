@@ -119,6 +119,30 @@ from .views.analytics_views import (
     GetAnalyticsStats,
 )
 
+from .views.recommendations_views import (
+    GetRecommendations,
+    GetRecommendationsByType,
+    TrainRecommendationModels,
+)
+
+from .views.activity_views import (
+    GetRecentActivity,
+    GetRecentActivityByType,
+)
+
+from .views.track_and_stats_views import (
+    GetTrackDetails,
+    GetRelatedTracks,
+    GetUserStatistics,
+)
+
+from .views.public_views import (
+    PublicDiscoverView,
+    PublicTrendingView,
+    PublicRecommendationsView,
+    PublicGenresView,
+    PublicContentDetailView,
+)
 
 from .seeders.spotify.create_user_seed import create_user_seed
 from .views.merge_similars import merge_similars
@@ -130,101 +154,124 @@ urlpatterns = [
     path('register/', register_view, name='register'),
     path('logout/', Logout.as_view(), name='logout'),
     path('login/', AuthLogin.as_view(), name='login'),
-    path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/refresh/',  TokenRefreshView.as_view(), name='token_refresh'),
 
-    path('service/login', ConnectLogin.as_view(), name='connect'),
-    path('spotify/callback', SpotifyCallback.as_view(), name='spotify_callback'),
-    path('ytmusic/callback', YtmusicCallback.as_view(), name='ytmusic_callback'),
-    path('lastfm/callback', LastfmCallback.as_view(), name='lastfm_callback'),
-    path('mal/callback', MalCallback.as_view(), name='mal_callback'),
+    path('service/login/',  ConnectLogin.as_view(), name='connect'),
+    path('spotify/callback/',  SpotifyCallback.as_view(), name='spotify_callback'),
+    path('ytmusic/callback/',  YtmusicCallback.as_view(), name='ytmusic_callback'),
+    path('lastfm/callback/',  LastfmCallback.as_view(), name='lastfm_callback'),
+    path('mal/callback/',  MalCallback.as_view(), name='mal_callback'),
 
-    path('spotify/connect', SpotifyConnect.as_view(), name='spotify_connect'),
-    path('ytmusic/connect', YtmusicConnect.as_view(), name='ytmusic_connect'),
-    path('lastfm/connect', LastfmConnect.as_view(), name='lastfm_connect'),
-    path('mal/connect', MalConnect.as_view(), name='mal_connect'),
+    path('spotify/connect/',  SpotifyConnect.as_view(), name='spotify_connect'),
+    path('ytmusic/connect/',  YtmusicConnect.as_view(), name='ytmusic_connect'),
+    path('lastfm/connect/',  LastfmConnect.as_view(), name='lastfm_connect'),
+    path('mal/connect/',  MalConnect.as_view(), name='mal_connect'),
 
-    path('ytmusic/token/refresh', YtmusicRefreshToken.as_view(), name='ytmusic_refresh_token'),
-    path('spotify/token/refresh', SpotifyRefreshToken.as_view(), name='spotify_refresh_token'),
+    path('ytmusic/token/refresh/',  YtmusicRefreshToken.as_view(), name='ytmusic_refresh_token'),
+    path('spotify/token/refresh/',  SpotifyRefreshToken.as_view(), name='spotify_refresh_token'),
 
-    path('me/likes/update', UpdateMyLikes.as_view(), name='update_my_likes'),
-    path('me/profile', GetMyProfile.as_view(), name='get_my_profile'),
-    path('me/profile/set', SetMyProfile.as_view(), name='set_my_profile'),
+    path('me/likes/update/',  UpdateMyLikes.as_view(), name='update_my_likes'),
+    path('me/profile/',  GetMyProfile.as_view(), name='get_my_profile'),
+    path('me/profile/set/',  SetMyProfile.as_view(), name='set_my_profile'),
 
-    path('bud/common/liked/artists', GetCommonLikedArtists.as_view(), name='get_common_liked_artists'),
-    path('bud/common/liked/tracks', GetCommonLikedTracks.as_view(), name='get_common_liked_tracks'),
-    path('bud/common/liked/genres', GetCommonLikedGenres.as_view(), name='get_common_liked_genres'),
-    path('bud/common/liked/albums', GetCommonLikedAlbums.as_view(), name='get_common_liked_albums'),
-    path('bud/common/played/tracks', GetCommonPlayedTracks.as_view(), name='get_common_played_tracks'),
-    path('bud/common/top/artists', GetCommonTopArtists.as_view(), name='get_common_top_artists'),
-    path('bud/common/top/tracks', GetCommonTopTracks.as_view(), name='get_common_top_tracks'),
-    path('bud/common/top/genres', GetCommonTopGenres.as_view(), name='get_common_top_genres'),
-    path('bud/common/top/anime', GetCommonTopAnime.as_view(), name='get_common_top_anime'),
-    path('bud/common/top/manga', GetCommonTopManga.as_view(), name='get_common_top_manga'),
+    path('bud/common/liked/artists/',  GetCommonLikedArtists.as_view(), name='get_common_liked_artists'),
+    path('bud/common/liked/tracks/',  GetCommonLikedTracks.as_view(), name='get_common_liked_tracks'),
+    path('bud/common/liked/genres/',  GetCommonLikedGenres.as_view(), name='get_common_liked_genres'),
+    path('bud/common/liked/albums/',  GetCommonLikedAlbums.as_view(), name='get_common_liked_albums'),
+    path('bud/common/played/tracks/',  GetCommonPlayedTracks.as_view(), name='get_common_played_tracks'),
+    path('bud/common/top/artists/',  GetCommonTopArtists.as_view(), name='get_common_top_artists'),
+    path('bud/common/top/tracks/',  GetCommonTopTracks.as_view(), name='get_common_top_tracks'),
+    path('bud/common/top/genres/',  GetCommonTopGenres.as_view(), name='get_common_top_genres'),
+    path('bud/common/top/anime/',  GetCommonTopAnime.as_view(), name='get_common_top_anime'),
+    path('bud/common/top/manga/',  GetCommonTopManga.as_view(), name='get_common_top_manga'),
 
-    path('me/liked/artists', GetLikedArtists.as_view(), name='get_liked_artists'),
-    path('me/liked/tracks', GetLikedTracks.as_view(), name='get_liked_tracks'),
-    path('me/liked/genres', GetLikedGenres.as_view(), name='get_liked_genres'),
-    path('me/liked/albums', GetLikedAlbums.as_view(), name='get_liked_albums'),
-    path('me/played/tracks', GetPlayedTracks.as_view(), name='get_played_tracks'),
-    path('me/top/artists', GetTopArtists.as_view(), name='get_top_artists'),
-    path('me/top/tracks', GetTopTracks.as_view(), name='get_top_tracks'),
-    path('me/top/genres', GetTopGenres.as_view(), name='get_top_genres'),
-    path('me/top/anime', GetTopAnime.as_view(), name='get_top_anime'),
-    path('me/top/manga', GetTopManga.as_view(), name='get_top_manga'),
+    path('me/liked/artists/',  GetLikedArtists.as_view(), name='get_liked_artists'),
+    path('me/liked/tracks/',  GetLikedTracks.as_view(), name='get_liked_tracks'),
+    path('me/liked/genres/',  GetLikedGenres.as_view(), name='get_liked_genres'),
+    path('me/liked/albums/',  GetLikedAlbums.as_view(), name='get_liked_albums'),
+    path('me/played/tracks/',  GetPlayedTracks.as_view(), name='get_played_tracks'),
+    path('me/top/artists/',  GetTopArtists.as_view(), name='get_top_artists'),
+    path('me/top/tracks/',  GetTopTracks.as_view(), name='get_top_tracks'),
+    path('me/top/genres/',  GetTopGenres.as_view(), name='get_top_genres'),
+    path('me/top/anime/',  GetTopAnime.as_view(), name='get_top_anime'),
+    path('me/top/manga/',  GetTopManga.as_view(), name='get_top_manga'),
 
-    path('bud/profile', GetBudProfile.as_view(), name='get_bud_profile'),
+    path('bud/profile/',  GetBudProfile.as_view(), name='get_bud_profile'),
 
-    path('bud/liked/artists', GetBudsByLikedArtists.as_view(), name='get_buds_by_liked_artists'),
-    path('bud/liked/tracks', GetBudsByLikedTracks.as_view(), name='get_buds_by_liked_tracks'),
-    path('bud/liked/genres', GetBudsByLikedGenres.as_view(), name='get_buds_by_liked_genres'),
-    path('bud/liked/albums', GetBudsByLikedAlbums.as_view(), name='get_buds_by_liked_albums'),
-    path('bud/liked/aio', GetBudsByLikedAio.as_view(), name='get_buds_by_liked_aio'),
-    path('bud/top/artists', GetBudsByTopArtists.as_view(), name='get_buds_by_top_artists'),
-    path('bud/top/tracks', GetBudsByTopTracks.as_view(), name='get_buds_by_top_tracks'),
-    path('bud/top/genres', GetBudsByTopGenres.as_view(), name='get_buds_by_top_genres'),
-    path('bud/top/anime', GetBudsByTopAnime.as_view(), name='get_buds_by_top_anime'),
-    path('bud/top/manga', GetBudsByTopManga.as_view(), name='get_buds_by_top_manga'),
-    path('bud/played/tracks', GetBudsByPlayedTracks.as_view(), name='get_buds_by_played_tracks'),
-    path('bud/artist', GetBudsByArtist.as_view(), name='get_buds_by_artist'),
-    path('bud/track', GetBudsByTrack.as_view(), name='get_buds_by_track'),
-    path('bud/genre', GetBudsByGenre.as_view(), name='get_buds_by_genre'),
+    path('bud/liked/artists/',  GetBudsByLikedArtists.as_view(), name='get_buds_by_liked_artists'),
+    path('bud/liked/tracks/',  GetBudsByLikedTracks.as_view(), name='get_buds_by_liked_tracks'),
+    path('bud/liked/genres/',  GetBudsByLikedGenres.as_view(), name='get_buds_by_liked_genres'),
+    path('bud/liked/albums/',  GetBudsByLikedAlbums.as_view(), name='get_buds_by_liked_albums'),
+    path('bud/liked/aio/',  GetBudsByLikedAio.as_view(), name='get_buds_by_liked_aio'),
+    path('bud/top/artists/',  GetBudsByTopArtists.as_view(), name='get_buds_by_top_artists'),
+    path('bud/top/tracks/',  GetBudsByTopTracks.as_view(), name='get_buds_by_top_tracks'),
+    path('bud/top/genres/',  GetBudsByTopGenres.as_view(), name='get_buds_by_top_genres'),
+    path('bud/top/anime/',  GetBudsByTopAnime.as_view(), name='get_buds_by_top_anime'),
+    path('bud/top/manga/',  GetBudsByTopManga.as_view(), name='get_buds_by_top_manga'),
+    path('bud/played/tracks/',  GetBudsByPlayedTracks.as_view(), name='get_buds_by_played_tracks'),
+    path('bud/artist/',  GetBudsByArtist.as_view(), name='get_buds_by_artist'),
+    path('bud/track/',  GetBudsByTrack.as_view(), name='get_buds_by_track'),
+    path('bud/genre/',  GetBudsByGenre.as_view(), name='get_buds_by_genre'),
     path('bud/album/', GetBudsByAlbum.as_view(), name='get_buds_by_album'),
 
-    path('bud/search', SearchUsers.as_view(), name='search_users'),
+    path('bud/search/',  SearchUsers.as_view(), name='search_users'),
 
-    path('spotify/seed/user/create', create_user_seed, name='create_user_seed'),
+    path('spotify/seed/user/create/',  create_user_seed, name='create_user_seed'),
 
-    path('merge-similars', merge_similars, name='merge_similars'),
+    path('merge-similars/',  merge_similars, name='merge_similars'),
     path('login/', AuthLogin.as_view(), name='api_login'),
     path('token/refresh/', RefreshTokenView.as_view(), name='token_refresh'),
 
     # Content endpoints
-    path('content/tracks', GetTracks.as_view(), name='get_tracks'),
-    path('content/artists', GetArtists.as_view(), name='get_artists'),
-    path('content/albums', GetAlbums.as_view(), name='get_albums'),
-    path('content/playlists', GetPlaylists.as_view(), name='get_playlists'),
-    path('content/genres', GetGenres.as_view(), name='get_genres'),
+    path('content/tracks/',  GetTracks.as_view(), name='get_tracks'),
+    path('content/artists/',  GetArtists.as_view(), name='get_artists'),
+    path('content/albums/',  GetAlbums.as_view(), name='get_albums'),
+    path('content/playlists/',  GetPlaylists.as_view(), name='get_playlists'),
+    path('content/genres/',  GetGenres.as_view(), name='get_genres'),
 
     # Search endpoints
-    path('search', SearchView.as_view(), name='search'),
-    path('search/suggestions', SearchSuggestionsView.as_view(), name='search_suggestions'),
-    path('search/recent', SearchRecentView.as_view(), name='search_recent'),
-    path('search/trending', SearchTrendingView.as_view(), name='search_trending'),
+    path('search/',  SearchView.as_view(), name='search'),
+    path('search/suggestions/',  SearchSuggestionsView.as_view(), name='search_suggestions'),
+    path('search/recent/',  SearchRecentView.as_view(), name='search_recent'),
+    path('search/trending/',  SearchTrendingView.as_view(), name='search_trending'),
 
     # Library endpoints
-    path('library', GetLibrary.as_view(), name='get_library'),
-    path('library/playlists', GetLibraryPlaylists.as_view(), name='get_library_playlists'),
-    path('library/liked', GetLibraryLiked.as_view(), name='get_library_liked'),
-    path('library/downloads', GetLibraryDownloads.as_view(), name='get_library_downloads'),
-    path('library/recent', GetLibraryRecent.as_view(), name='get_library_recent'),
+    path('library/',  GetLibrary.as_view(), name='get_library'),
+    path('library/playlists/',  GetLibraryPlaylists.as_view(), name='get_library_playlists'),
+    path('library/liked/',  GetLibraryLiked.as_view(), name='get_library_liked'),
+    path('library/downloads/',  GetLibraryDownloads.as_view(), name='get_library_downloads'),
+    path('library/recent/',  GetLibraryRecent.as_view(), name='get_library_recent'),
 
     # Event endpoints
-    path('events', GetEvents.as_view(), name='get_events'),
+    path('events/',  GetEvents.as_view(), name='get_events'),
     path('events/<int:event_id>', GetEventById.as_view(), name='get_event_by_id'),
 
     # Analytics endpoints
-    path('analytics', GetAnalytics.as_view(), name='get_analytics'),
-    path('analytics/stats', GetAnalyticsStats.as_view(), name='get_analytics_stats'),
+    path('analytics/',  GetAnalytics.as_view(), name='get_analytics'),
+    path('analytics/stats/',  GetAnalyticsStats.as_view(), name='get_analytics_stats'),
+    
+    # Recommendations endpoints
+    path('recommendations/', GetRecommendations.as_view(), name='get_recommendations'),
+    path('recommendations/<str:rec_type>/', GetRecommendationsByType.as_view(), name='get_recommendations_by_type'),
+    path('recommendations/train/models/', TrainRecommendationModels.as_view(), name='train_recommendation_models'),
+    
+    # Recent activity endpoints
+    path('activity/recent/', GetRecentActivity.as_view(), name='get_recent_activity'),
+    path('activity/recent/<str:activity_type>/', GetRecentActivityByType.as_view(), name='get_recent_activity_by_type'),
+    
+    # Track details endpoints
+    path('track/<str:track_id>/', GetTrackDetails.as_view(), name='get_track_details'),
+    path('track/<str:track_id>/related/', GetRelatedTracks.as_view(), name='get_related_tracks'),
+    
+    # User statistics endpoint
+    path('user/statistics/', GetUserStatistics.as_view(), name='get_user_statistics'),
+    
+    # Public/Guest endpoints (no authentication required)
+    path('v1/discover/public/', PublicDiscoverView.as_view(), name='public_discover'),
+    path('v1/discover/public/trending/', PublicTrendingView.as_view(), name='public_trending'),
+    path('v1/recommendations/public/', PublicRecommendationsView.as_view(), name='public_recommendations'),
+    path('v1/discover/public/genres/', PublicGenresView.as_view(), name='public_genres'),
+    path('v1/content/public/<str:content_type>/<str:content_id>/', PublicContentDetailView.as_view(), name='public_content_detail'),
 ]
 # Add error handling views
 handler404 = NotFoundView.as_view()
