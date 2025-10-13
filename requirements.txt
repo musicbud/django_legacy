@@ -24,13 +24,16 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 cryptography==46.0.2
 decorator==5.2.1
-Django==5.2.7
-django-cors-headers==4.9.0
-django-pdb==0.6.2
-django-redis==6.0.0
-django_neomodel==0.2.0
-djangorestframework==3.16.1
-djangorestframework_simplejwt==5.5.1
+# FastAPI Core
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic[email]==2.5.0
+pydantic-settings==2.1.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
 executing==2.2.1
 frozenlist==1.7.0
 gensim==4.3.3

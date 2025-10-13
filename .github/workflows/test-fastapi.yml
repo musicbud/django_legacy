@@ -1,0 +1,197 @@
+name: FastAPI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/fastapi_backend/**'
+      - '.github/workflows/test-fastapi.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/fastapi_backend/**'
+      - '.github/workflows/test-fastapi.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      neo4j:
+        image: neo4j:5-community
+        ports:
+          - 7687:7687
+          - 7474:7474
+        env:
+          NEO4J_AUTH: neo4j/testpassword
+          NEO4J_dbms_default__database: neo4j
+        options: >-
+          --health-cmd "cypher-shell -u neo4j -p testpassword 'MATCH (n) RETURN count(n)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        cd backend/fastapi_backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+    
+    - name: Wait for services
+      run: |
+        # Wait for Redis
+        timeout 30 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' 127.0.0.1 6379
+        
+        # Wait for Neo4j
+        timeout 60 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' 127.0.0.1 7687
+    
+    - name: Run linting
+      run: |
+        cd backend/fastapi_backend
+        # Install linting tools
+        pip install flake8 black isort mypy
+        
+        # Check code formatting
+        black --check --diff app tests
+        isort --check-only --diff app tests
+        
+        # Run flake8
+        flake8 app tests --max-line-length=88 --extend-ignore=E203,W503
+        
+        # Type checking (optional, may fail initially)
+        mypy app || echo "Type checking failed - consider fixing gradually"
+    
+    - name: Run unit tests
+      run: |
+        cd backend/fastapi_backend
+        pytest tests/ -v --tb=short -m "unit" --cov=app --cov-report=xml --cov-report=term-missing
+      env:
+        TESTING: 1
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: testpassword
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        REDIS_DB: 15
+    
+    - name: Run integration tests
+      run: |
+        cd backend/fastapi_backend
+        pytest tests/ -v --tb=short -m "integration or api" --cov=app --cov-append --cov-report=xml --cov-report=term-missing
+      env:
+        TESTING: 1
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: testpassword
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        REDIS_DB: 15
+    
+    - name: Run security tests
+      run: |
+        cd backend/fastapi_backend
+        pytest tests/ -v --tb=short -m "security" --cov=app --cov-append --cov-report=xml --cov-report=term-missing
+      env:
+        TESTING: 1
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: testpassword
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        REDIS_DB: 15
+    
+    - name: Run performance tests
+      run: |
+        cd backend/fastapi_backend
+        pytest tests/ -v --tb=short -m "performance" --benchmark-only --benchmark-json=benchmark.json
+      env:
+        TESTING: 1
+        NEO4J_URI: bolt://localhost:7687
+        NEO4J_USER: neo4j
+        NEO4J_PASSWORD: testpassword
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        REDIS_DB: 15
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/fastapi_backend/coverage.xml
+        flags: fastapi
+        name: fastapi-coverage
+        fail_ci_if_error: false
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        cd backend/fastapi_backend
+        pytest tests/ --tb=short --junit-xml=test-results.xml || true
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          backend/fastapi_backend/test-results.xml
+          backend/fastapi_backend/coverage.xml
+          backend/fastapi_backend/htmlcov/
+          backend/fastapi_backend/benchmark.json
+
+  test-docker:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Docker image
+      run: |
+        cd backend/fastapi_backend
+        docker build -t musicbud-fastapi:test .
+    
+    - name: Run container smoke test
+      run: |
+        cd backend/fastapi_backend
+        # Start container
+        docker run -d --name musicbud-test -p 8000:8000 \
+          -e TESTING=1 \
+          -e CACHE_ENABLED=false \
+          -e RATE_LIMIT_ENABLED=false \
+          musicbud-fastapi:test
+        
+        # Wait for startup
+        sleep 10
+        
+        # Test basic endpoints
+        curl -f http://localhost:8000/ || exit 1
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/docs || exit 1
+        curl -f http://localhost:8000/openapi.json || exit 1
+        
+        # Cleanup
+        docker stop musicbud-test
+        docker rm musicbud-test

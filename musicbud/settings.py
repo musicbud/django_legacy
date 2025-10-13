@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
-import jwt
+# JWT will be available through rest_framework_simplejwt
 import sqlite3
 
 load_dotenv()
