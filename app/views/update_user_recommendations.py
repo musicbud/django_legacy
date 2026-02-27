@@ -10,10 +10,17 @@ class UpdateUserRecommendations(APIView):
     permission_classes = [AllowAny]
 
     async def get(self, request, user_id):
-        auth_result = await self.authentication_classes[0]().authenticate_async(request)
-        if auth_result is None:
-            return JsonResponse({'error': 'Authentication failed'}, status=401)
-        
-        user, _ = auth_result
-        # Your existing logic here
-        pass
+        try:
+            auth_result = await self.authentication_classes[0]().authenticate_async(request)
+            if auth_result is None:
+                return JsonResponse({'error': 'Authentication failed'}, status=401)
+            
+            user, _ = auth_result
+            # Your existing logic here
+            logger.warning(f"UpdateUserRecommendations for user_id {user_id} is a stub and does not perform any action.")
+            return JsonResponse({'message': 'UpdateUserRecommendations is a stub function. No action performed.', 'user_id': user_id}, status=200)
+
+        except Exception as e:
+            error_type = type(e).__name__
+            logger.error(f"Error in UpdateUserRecommendations for user_id {user_id}: {e}", exc_info=True)
+            return JsonResponse({'error': 'Internal Server Error', 'type': error_type}, status=500)

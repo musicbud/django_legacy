@@ -26,6 +26,33 @@ from app.db_models.ytmusic.ytmusic_track import  YtmusicTrack
 from app.db_models.user import User
 from django.db import transaction
 from asgiref.sync import sync_to_async
+from app.db_models.combined.combined_artist import CombinedArtist
+from app.db_models.combined.combined_album import CombinedAlbum
+from app.db_models.combined.combined_track import CombinedTrack
+from app.db_models.combined.combined_genre import CombinedGenre
+
+
+from app.db_models.lastfm.lastfm_album import  LastfmAlbum
+from app.db_models.lastfm.lastfm_artist import  LastfmArtist
+from app.db_models.lastfm.lastfm_genre import  LastfmGenre
+from app.db_models.lastfm.lastfm_track import  LastfmTrack
+
+
+from app.db_models.spotify.spotify_track import  SpotifyTrack
+from app.db_models.spotify.spotify_artist import  SpotifyArtist
+from app.db_models.spotify.spotify_album import  SpotifyAlbum
+from app.db_models.spotify.spotify_genre import  SpotifyGenre
+
+
+
+from app.db_models.ytmusic.ytmusic_album import YtmusicAlbum
+from app.db_models.ytmusic.ytmusic_artist import  YtmusicArtist
+from app.db_models.ytmusic.ytmusic_track import  YtmusicTrack
+
+
+from app.db_models.user import User
+from django.db import transaction
+from asgiref.sync import sync_to_async
 from neomodel import StructuredNode, db
 from collections import defaultdict
 import logging

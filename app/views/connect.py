@@ -1,13 +1,14 @@
 from datetime import datetime
 from django.http import JsonResponse
-from neomodel.exceptions import MultipleNodesReturned, DoesNotExist
 from adrf.views import APIView
-from rest_framework.permissions import AllowAny
 from app.middlewares.async_jwt_authentication import AsyncJWTAuthentication
+from rest_framework.permissions import AllowAny
+from neomodel.exceptions import MultipleNodesReturned, DoesNotExist
 from ..db_models.spotify.spotify_user import SpotifyUser
 from ..db_models.lastfm.lastfm_user import LastfmUser
 from ..db_models.ytmusic.ytmusic_user import YtmusicUser
 from ..db_models.mal.mal_user import MalUser
+
 
 from asgiref.sync import sync_to_async
 

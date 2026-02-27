@@ -57,7 +57,7 @@ def custom_install_labels():
     logger.info("All labels installed successfully.")
 
 # Set the Neo4j connection
-db.set_connection(settings.NEOMODEL_NEO4J_BOLT_URL)
+# db.set_connection(settings.NEOMODEL_NEO4J_BOLT_URL)
 
 # Set the node class resolver
 db.node_class_registry = resolve_node_class

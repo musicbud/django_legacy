@@ -28,7 +28,7 @@ class GetBudProfile(APIView):
             if not bud_id:
                 return JsonResponse({'error': 'Bud ID not provided'}, status=400)
 
-            bud_node = await ParentUser.nodes.get_or_none(uid=bud_id)
+            bud_node = await ParentUser.nodes_get_or_none(uid=bud_id)
 
             if user is None or bud_node is None:
                 logger.warning(f'User or bud not found: user={user}, bud_id={bud_id}')
@@ -41,7 +41,7 @@ class GetBudProfile(APIView):
                 }
             }
 
-            logger.info('Successfully fetched bud profile data for user=%s, bud_id=%s', user.uid, bud_id)
+            logger.info('Successfully fetched bud profile data for user=%s, bud_id=%s', user.username, bud_id)
             return JsonResponse(response_data)
 
         except Exception as e:

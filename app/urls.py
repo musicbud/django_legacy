@@ -6,15 +6,13 @@ from app.views.auth_views import (
     Logout,
     AuthLogin,
     register_view,
-    login_view,
+
     RefreshTokenView  
 )
 
 from .views.get_my_profile import GetMyProfile  
 
 from .views.connect import (
-    NotFoundView,
-    ErrorView,
     Login as ConnectLogin,
     SpotifyCallback,
     SpotifyConnect,
@@ -153,8 +151,9 @@ router = DefaultRouter()
 urlpatterns = [
     path('register/', register_view, name='register'),
     path('logout/', Logout.as_view(), name='logout'),
-    path('login/', AuthLogin.as_view(), name='login'),
+
     path('token/refresh/',  TokenRefreshView.as_view(), name='token_refresh'),
+
 
     path('service/login/',  ConnectLogin.as_view(), name='connect'),
     path('spotify/callback/',  SpotifyCallback.as_view(), name='spotify_callback'),
@@ -274,7 +273,6 @@ urlpatterns = [
     path('v1/content/public/<str:content_type>/<str:content_id>/', PublicContentDetailView.as_view(), name='public_content_detail'),
 ]
 # Add error handling views
-handler404 = NotFoundView.as_view()
-handler500 = ErrorView.as_view()
+
 
 

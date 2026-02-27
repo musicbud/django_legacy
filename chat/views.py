@@ -21,6 +21,24 @@ User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
+def channel_admin_or_moderator_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, channel_id, *args, **kwargs):
+        channel = get_object_or_404(Channel, id=channel_id)
+        if request.user == channel.admin or request.user in channel.moderators.all():
+            return view_func(request, channel_id, *args, **kwargs)
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    return wrapper
+
+def channel_admin_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, channel_id, *args, **kwargs):
+        channel = get_object_or_404(Channel, id=channel_id)
+        if request.user == channel.admin:
+            return view_func(request, channel_id, *args, **kwargs)
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    return wrapper
+
 def read_request_body(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -29,13 +47,13 @@ def read_request_body(view_func):
             if 'application/json' in content_type:
                 try:
                     body = request.body.decode('utf-8')
-                    print("Raw request body (decorator):", body)
+
                     request.JSON = json.loads(body)
                     # Convert JSON data to QueryDict for consistency
                     request.POST = QueryDict('', mutable=True)
                     request.POST.update(request.JSON)
                 except json.JSONDecodeError as e:
-                    print("Failed to parse JSON data (decorator):", str(e))
+
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
             else:
                 # For non-JSON content types, keep the original POST data
@@ -66,11 +84,7 @@ def user_list(request):
     users = User.objects.exclude(id=request.user.id)
     return render(request, 'chat/user_list.html', {'users': users})
 
-@login_required
-@read_request_body
-def channel_list(request):
-    channels = Channel.objects.all()
-    return render(request, 'chat/channel_list.html', {'channels': channels})
+
 
 @login_required
 @read_request_body
@@ -194,7 +208,8 @@ def channel_action(request, channel_id, action):
     except User.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        logger.exception("Error in channel_action view") # Log the exception with traceback
+        return JsonResponse({'status': 'error', 'message': 'An internal server error occurred.'}, status=500)
 
 @login_required
 @read_request_body
@@ -206,34 +221,31 @@ def channel_dashboard(request, channel_id):
 
 @login_required
 @read_request_body
+@channel_admin_or_moderator_required
 def accept_user(request, channel_id, user_id):
-    channel = get_object_or_404(Channel, id=channel_id)
+    channel = get_object_or_404(Channel, id=channel_id) # channel is already fetched by decorator
     user = get_object_or_404(User, id=user_id)
-    if request.user == channel.admin or request.user in channel.moderators.all():
-        channel.members.add(user)
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Unauthorized'})
+    channel.members.add(user)
+    return JsonResponse({'status': 'success'})
 
 @login_required
 @read_request_body
+@channel_admin_or_moderator_required
 def kick_user(request, channel_id, user_id):
-    channel = get_object_or_404(Channel, id=channel_id)
+    channel = get_object_or_404(Channel, id=channel_id) # channel is already fetched by decorator
     user = get_object_or_404(User, id=user_id)
-    if request.user == channel.admin or request.user in channel.moderators.all():
-        channel.members.remove(user)
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Unauthorized'})
+    channel.members.remove(user)
+    return JsonResponse({'status': 'success'})
 
 @login_required
 @read_request_body
+@channel_admin_or_moderator_required
 def block_user(request, channel_id, user_id):
-    channel = get_object_or_404(Channel, id=channel_id)
+    channel = get_object_or_404(Channel, id=channel_id) # channel is already fetched by decorator
     user = get_object_or_404(User, id=user_id)
-    if request.user == channel.admin or request.user in channel.moderators.all():
-        channel.blocked_users.add(user)
-        channel.members.remove(user)
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Unauthorized'})
+    channel.blocked_users.add(user)
+    channel.members.remove(user)
+    return JsonResponse({'status': 'success'})
 
 @login_required
 @read_request_body
@@ -261,27 +273,23 @@ def handle_invitation(request, invitation_id, action):
 
 @login_required
 @read_request_body
+@channel_admin_required
 def add_moderator(request, channel_id, user_id):
-    channel = get_object_or_404(Channel, id=channel_id)
+    channel = get_object_or_404(Channel, id=channel_id) # channel is already fetched by decorator
     user = get_object_or_404(User, id=user_id)
-    if request.user == channel.admin:
-        channel.moderators.add(user)
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Unauthorized'})
+    channel.moderators.add(user)
+    return JsonResponse({'status': 'success'})
 
 @sync_to_async
 def async_render(request, template_name, context=None):
     return render(request, template_name, context)
 
+@login_required
+@read_request_body
 async def channel_list(request):
     channels = await sync_to_async(list)(Channel.objects.all())
     context = {'channels': channels}
     return await async_render(request, 'chat/channel_list.html', context)
-
-# Keep other views synchronous for now
-@read_request_body
-def chat_home(request):
-    return render(request, 'chat/home.html')
 
 @read_request_body
 def chat_room(request, room_name):
@@ -291,16 +299,3 @@ def chat_room(request, room_name):
         'messages': messages,
         'username': request.user.username if request.user.is_authenticated else 'Anonymous',
     })
-
-@read_request_body
-def channel_list(request):
-    channels = Channel.objects.all()
-    return render(request, 'chat/channel_list.html', {'channels': channels})
-
-# @login_required
-# def chat_room(request, room_name):
-#     return render(request, 'chat/room.html', {
-#         'room_name': room_name,
-#         'username': request.user.username,
-#     })
-

@@ -7,8 +7,6 @@ from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse, HttpResponse
 from rest_framework.permissions import AllowAny
 from app.forms.registeration import RegistrationForm, LoginForm
-from app.db_models.parent_user import ParentUser
-from neomodel.exceptions import UniqueProperty, DoesNotExist
 import logging
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.shortcuts import render, redirect
@@ -125,14 +123,19 @@ class Register(View):
         email = request.POST.get('email')
         password = request.POST.get('password')
         
-        if User.objects.filter(username=username).exists():
-            error = 'Username already exists'
-        elif User.objects.filter(email=email).exists():
-            error = 'Email already exists'
-        else:
-            user = User.objects.create_user(username=username, email=email, password=password)
-            login(request, user)
-            return redirect('home')  # Make sure you have a 'home' URL name defined
-
-        return render(request, self.template_name, {'error': error})
+        try:
+            if User.objects.filter(username=username).exists():
+                error = 'Username already exists'
+            elif User.objects.filter(email=email).exists():
+                error = 'Email already exists'
+            else:
+                user = User.objects.create_user(username=username, email=email, password=password)
+                login(request, user)
+                logger.info(f"New user registered (form): {username}")
+                return redirect('home')  # Make sure you have a 'home' URL name defined
+            
+            return render(request, self.template_name, {'error': error})
+        except Exception as e:
+            logger.error(f"Unexpected error in form registration for user {username}: {str(e)}", exc_info=True)
+            return render(request, self.template_name, {'error': 'An unexpected error occurred during registration. Please try again.'})
 

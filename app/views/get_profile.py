@@ -43,10 +43,11 @@ class GetItemsMixin(APIView):
                 if isinstance(item, dict):
                     serialized_items.append(item)
                 elif hasattr(item, 'serialize'):
-                    serialized_item = await item.serialize()  # Remove await here
+                    serialized_item = await item.serialize()
                     serialized_items.append(serialized_item)
                 else:
                     logger.warning(f"Item {item} is not a dict and does not have a serialize method")
+
 
             paginator = StandardResultsSetPagination()
             paginated_items = paginator.paginate_queryset(serialized_items, request)

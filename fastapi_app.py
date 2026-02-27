@@ -5,38 +5,49 @@ Production-ready async music recommendation API
 
 import logging
 import os
+import json # Import json for structured logging
+import uuid # Import uuid for request IDs
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
+from pythonjsonlogger import jsonlogger # Import jsonlogger for structured logging
 
 # Import our custom modules
-from fastapi_backend.app.core.settings import settings
-from fastapi_backend.app.core.database import init_databases, close_databases
-from fastapi_backend.app.core.middleware import setup_middleware
+from backend.app.core.settings import settings
+from backend.app.core.database import init_databases, close_databases
+from backend.app.core.middleware import setup_middleware
 
 # Import all routers
-from fastapi_backend.app.api.routers.auth import router as auth_router
-from fastapi_backend.app.api.routers.users import router as users_router
-from fastapi_backend.app.api.routers.content import router as content_router
-from fastapi_backend.app.api.routers.search import router as search_router
-from fastapi_backend.app.api.routers.recommendations import router as recommendations_router
-from fastapi_backend.app.api.routers.public import router as public_router
-from fastapi_backend.app.api.routers.library import router as library_router
-from fastapi_backend.app.api.routers.social import router as social_router
-from fastapi_backend.app.api.routers.analytics import router as analytics_router
-from fastapi_backend.app.api.routers.activity import router as activity_router
-from fastapi_backend.app.api.routers.admin import router as admin_router
+from backend.app.api.routers.auth import router as auth_router
+from backend.app.api.routers.users import router as users_router
+from backend.app.api.routers.content import router as content_router
+from backend.app.api.routers.search import router as search_router
+from backend.app.api.routers.recommendations import router as recommendations_router
+from backend.app.api.routers.public import router as public_router
+from backend.app.api.routers.library import router as library_router
+from backend.app.api.routers.social import router as social_router
+from backend.app.api.routers.analytics import router as analytics_router
+from backend.app.api.routers.activity import router as activity_router
+from backend.app.api.routers.admin import router as admin_router
+from backend.app.api.routers.events import router as events_router
+from backend.app.api.routers.stories import router as stories_router
+from backend.app.api.routers.services import router as services_router # Import services_router
 
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Configure logging with structured JSON format
+log_handler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt='%(levelname)s %(asctime)s %(name)s %(message)s %(request_id)s %(user_id)s %(remote_ip)s'
 )
+log_handler.setFormatter(formatter)
+
 logger = logging.getLogger(__name__)
+logger.addHandler(log_handler)
+logger.setLevel(getattr(logging, settings.LOG_LEVEL))
+logger.propagate = False # Prevent double logging if root handler is also configured
 
 
 @asynccontextmanager
@@ -51,7 +62,7 @@ async def lifespan(app: FastAPI):
         logger.info("Database connections initialized")
         
         # Initialize services
-        from fastapi_backend.app.services.recommendation_service import get_recommendation_service
+        from backend.app.services.recommendation_service import get_recommendation_service
         rec_service = get_recommendation_service()
         await rec_service.initialize()
         logger.info("Recommendation service initialized")
@@ -87,6 +98,30 @@ app = FastAPI(
 # Setup middleware (includes CORS, security, rate limiting, etc.)
 setup_middleware(app)
 
+# Custom middleware for request ID and contextual logging
+@app.middleware("http")
+async def add_request_id_middleware(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+
+    # Add request ID to logs
+    log_extra = {"request_id": request_id, "remote_ip": request.client.host}
+    
+    # Log user ID if available (from auth middleware)
+    if hasattr(request.state, 'user') and request.state.user:
+        log_extra["user_id"] = request.state.user.user_id
+    else:
+        log_extra["user_id"] = "anonymous"
+
+    logger.info(f"Incoming request: {request.method} {request.url.path}", extra=log_extra)
+    
+    response = await call_next(request)
+    
+    # Add request ID to response headers
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 # Include routers with prefixes - organize by logical API structure
 app.include_router(public_router, prefix="/v1/discover/public", tags=["Public Discovery"])
 app.include_router(public_router, prefix="/v1/recommendations/public", tags=["Public Recommendations"])
@@ -100,6 +135,9 @@ app.include_router(social_router, prefix="/v1/social", tags=["Social"])
 app.include_router(analytics_router, prefix="/v1/analytics", tags=["Analytics"])
 app.include_router(activity_router, prefix="/v1/activity", tags=["Activity"])
 app.include_router(admin_router, prefix="/v1/admin", tags=["Admin"])
+app.include_router(events_router, prefix="/v1/events", tags=["Events"])
+app.include_router(stories_router, prefix="/v1/stories", tags=["Stories"])
+app.include_router(services_router, prefix="/v1/services", tags=["External Services"])
 
 
 @app.get("/")
@@ -116,7 +154,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    from fastapi_backend.app.core.database import DatabaseHealthCheck
+    from backend.app.core.database import DatabaseHealthCheck # Corrected import
     
     try:
         db_health = await DatabaseHealthCheck.check_all()
@@ -161,6 +199,7 @@ async def get_metrics():
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     """Custom 404 handler"""
+    logger.error(f"Endpoint not found: {request.method} {request.url.path}", extra={"request_id": getattr(request.state, "request_id", None)})
     return JSONResponse(
         status_code=404,
         content={
@@ -176,7 +215,7 @@ async def not_found_handler(request: Request, exc: HTTPException):
 @app.exception_handler(500)
 async def internal_server_error_handler(request: Request, exc: HTTPException):
     """Custom 500 handler"""
-    logger.error(f"Internal server error: {exc}")
+    logger.error(f"Internal server error: {exc}", extra={"request_id": getattr(request.state, "request_id", None)})
     return JSONResponse(
         status_code=500,
         content={
